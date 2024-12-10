@@ -14,9 +14,15 @@ const dirs = [
   [-1, 0],
 ];
 
+const scoreForCell = new Map();
+
 function getScore(x, y) {
   const tile = map[y][x];
   if (tile === 9) return [x + y * width];
+
+  if (scoreForCell.has(x + y * width)) {
+    return scoreForCell.get(x + y * width);
+  }
 
   let sum = [];
   for (const [dx, dy] of dirs) {
@@ -26,6 +32,7 @@ function getScore(x, y) {
       }
     }
   }
+  scoreForCell.set(x + y * width, sum);
   return sum;
 }
 
