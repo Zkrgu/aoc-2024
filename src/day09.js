@@ -3,11 +3,16 @@ import { readFileSync } from "node:fs";
 const input = readFileSync(process.stdin.fd, "utf-8").trim();
 
 const blocks = [];
+const spaces = [];
 const part1Blocks = [];
 
 input.split("").forEach((e, i) => {
   const num = parseInt(e);
-  blocks.push({ id: i, count: num });
+  if (i & 1) {
+    spaces.push({ idx: part1Blocks.length, count: num });
+  } else {
+    blocks.push({ id: i / 2, idx: part1Blocks.length, count: num });
+  }
   for (let j = 0; j < num; ++j) {
     if (i & 1) {
       part1Blocks.push(undefined);
@@ -16,6 +21,8 @@ input.split("").forEach((e, i) => {
     }
   }
 });
+
+const finalBlocks = [...part1Blocks];
 
 for (let i = part1Blocks.length - 1; i > 0; --i) {
   const freeIndex = part1Blocks.indexOf(undefined);
@@ -30,31 +37,21 @@ const part1 = part1Blocks.reduce((p, c, i) => {
   return p + c * i;
 }, 0);
 
-for (let i = (input.length - 1) / 2; i > 0; --i) {
-  const blocksIndex = blocks.findIndex((e) => e.id === i * 2);
-  const count = blocks.at(blocksIndex).count;
-
-  const freeIndex = blocks.findIndex((e) => e.id & 1 && e.count >= count);
-  if (freeIndex > -1 && freeIndex < blocksIndex) {
-    const block = blocks.splice(blocksIndex, 1, { id: 0, count })[0];
-    if (blocks[freeIndex].count > count) {
-      blocks[freeIndex].count -= count;
-      blocks.splice(freeIndex, 0, block);
-    } else {
-      blocks.splice(freeIndex, 1, block);
+for (const block of blocks.reverse()) {
+  const freeBlock = spaces.find((e) => e.count >= block.count);
+  if (freeBlock?.idx < block.idx) {
+    for (let i = 0; i < block.count; ++i) {
+      finalBlocks[freeBlock.idx + i] = block.id;
+      finalBlocks[block.idx + i] = undefined;
     }
+    freeBlock.count -= block.count;
+    freeBlock.idx += block.count;
   }
 }
 
-let idx = 0;
-const part2 = blocks.reduce((p, c) => {
-  if (c.id & 1) {
-    idx += c.count;
-    return p;
-  }
-  let ret = p + (c.id * c.count * (c.count + 2 * idx - 1)) / 4;
-  idx += c.count;
-  return ret;
+const part2 = finalBlocks.reduce((p, c, i) => {
+  if (c === undefined) return p;
+  return p + c * i;
 }, 0);
 
 console.log(part1);
