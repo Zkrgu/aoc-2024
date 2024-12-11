@@ -4,12 +4,14 @@ const input = readFileSync(process.stdin.fd, "utf-8").trim();
 
 const blocks = [];
 const spaces = [];
+const spaceIdx = [];
 const part1Blocks = [];
 
 input.split("").forEach((e, i) => {
   const num = parseInt(e);
   if (i & 1) {
-    spaces.push({ idx: part1Blocks.length, count: num });
+    spaceIdx.push(part1Blocks.length);
+    spaces.push(num);
   } else {
     blocks.push({ id: i / 2, idx: part1Blocks.length, count: num });
   }
@@ -31,7 +33,7 @@ function build(a, v, tl, tr) {
     const tm = Math.floor((tl + tr) / 2);
     build(a, v * 2, tl, tm);
     build(a, v * 2 + 1, tm + 1, tr);
-    t[v] = { count: Math.max(t[v * 2].count, t[v * 2 + 1].count) };
+    t[v] = Math.max(t[v * 2], t[v * 2 + 1]);
   }
 }
 
@@ -39,18 +41,18 @@ build(spaces, 1, 0, spaces.length - 1);
 
 function update(v, tl, tr, pos, new_val) {
   if (tl == tr) {
-    t[v].count = new_val;
+    t[v] = new_val;
   } else {
     const tm = Math.floor((tl + tr) / 2);
     if (pos <= tm) update(v * 2, tl, tm, pos, new_val);
     else update(v * 2 + 1, tm + 1, tr, pos, new_val);
-    t[v].count = Math.max(t[v * 2].count, t[v * 2 + 1].count);
+    t[v] = Math.max(t[v * 2], t[v * 2 + 1]);
   }
 }
 
 function first(v, tl, tr, l, r, x) {
   if (tl > r || tr < l) return -1;
-  if (t[v].count < x) return -1;
+  if (t[v] < x) return -1;
   if (tl == tr) return tl;
 
   const tm = tl + Math.floor((tr - tl) / 2);
@@ -84,13 +86,13 @@ for (const block of blocks.reverse()) {
     block.count,
   );
   const freeBlock = spaces[freeIndex];
-  if (freeBlock?.idx < block.idx) {
+  if (freeIndex >= 0 && spaceIdx[freeIndex] < block.idx) {
     for (let i = 0; i < block.count; ++i) {
-      finalBlocks[freeBlock.idx + i] = block.id;
+      finalBlocks[spaceIdx[freeIndex] + i] = block.id;
       finalBlocks[block.idx + i] = undefined;
     }
-    update(1, 0, spaces.length - 1, freeIndex, freeBlock.count - block.count);
-    freeBlock.idx += block.count;
+    update(1, 0, spaces.length - 1, freeIndex, freeBlock - block.count);
+    spaceIdx[freeIndex] += block.count;
   }
 }
 
