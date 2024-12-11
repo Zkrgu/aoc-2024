@@ -22,6 +22,43 @@ input.split("").forEach((e, i) => {
   }
 });
 
+const t = [];
+
+function build(a, v, tl, tr) {
+  if (tl == tr) {
+    t[v] = a[tl];
+  } else {
+    const tm = Math.floor((tl + tr) / 2);
+    build(a, v * 2, tl, tm);
+    build(a, v * 2 + 1, tm + 1, tr);
+    t[v] = { count: Math.max(t[v * 2].count, t[v * 2 + 1].count) };
+  }
+}
+
+build(spaces, 1, 0, spaces.length - 1);
+
+function update(v, tl, tr, pos, new_val) {
+  if (tl == tr) {
+    t[v].count = new_val;
+  } else {
+    const tm = Math.floor((tl + tr) / 2);
+    if (pos <= tm) update(v * 2, tl, tm, pos, new_val);
+    else update(v * 2 + 1, tm + 1, tr, pos, new_val);
+    t[v].count = Math.max(t[v * 2].count, t[v * 2 + 1].count);
+  }
+}
+
+function first(v, tl, tr, l, r, x) {
+  if (tl > r || tr < l) return -1;
+  if (t[v].count < x) return -1;
+  if (tl == tr) return tl;
+
+  const tm = tl + Math.floor((tr - tl) / 2);
+  const left = first(2 * v, tl, tm, l, r, x);
+  if (left != -1) return left;
+  return first(2 * v + 1, tm + 1, tr, l, r, x);
+}
+
 const finalBlocks = [...part1Blocks];
 
 for (let i = part1Blocks.length - 1; i > 0; --i) {
@@ -38,13 +75,21 @@ const part1 = part1Blocks.reduce((p, c, i) => {
 }, 0);
 
 for (const block of blocks.reverse()) {
-  const freeBlock = spaces.find((e) => e.count >= block.count);
+  const freeIndex = first(
+    1,
+    0,
+    spaces.length - 1,
+    0,
+    spaces.length - 1,
+    block.count,
+  );
+  const freeBlock = spaces[freeIndex];
   if (freeBlock?.idx < block.idx) {
     for (let i = 0; i < block.count; ++i) {
       finalBlocks[freeBlock.idx + i] = block.id;
       finalBlocks[block.idx + i] = undefined;
     }
-    freeBlock.count -= block.count;
+    update(1, 0, spaces.length - 1, freeIndex, freeBlock.count - block.count);
     freeBlock.idx += block.count;
   }
 }
