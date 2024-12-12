@@ -54,14 +54,8 @@ for (const [k, set] of area.entries()) {
   let sideCount = 0;
   for (const key of set) {
     const [x, y] = fromKey(key);
-    let localPerim = [];
-    for (const [i, [dx, dy]] of dirs.entries()) {
-      if (y + dy < 0 || x + dx < 0) {
-        localPerim.push(i);
-        continue;
-      }
-      if (set.has(toKey(x + dx, y + dy))) continue;
-      localPerim.push(i);
+    for (const [dx, dy] of dirs) {
+      if (!set.has(toKey(x + dx, y + dy))) ++perimiters;
     }
     sideCount += !set.has(toKey(x - 1, y)) && !set.has(toKey(x, y - 1));
     sideCount += !set.has(toKey(x + 1, y)) && !set.has(toKey(x, y - 1));
@@ -84,7 +78,6 @@ for (const [k, set] of area.entries()) {
       set.has(toKey(x + 1, y)) &&
       set.has(toKey(x, y + 1)) &&
       !set.has(toKey(x + 1, y + 1));
-    perimiters += localPerim.length;
   }
   perimiter.set(k, perimiters);
   sides.set(k, sideCount);
