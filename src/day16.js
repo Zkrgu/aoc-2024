@@ -16,25 +16,30 @@ const startY = Math.floor(startIndex / (width + 1));
 const endX = goalIndex % (width + 1);
 const endY = Math.floor(goalIndex / (width + 1));
 
-const q = [[startX, startY, 0]];
+const q = [toKey(startX, startY, 0)];
+const seen = new Set();
 const dist = new Map();
 const previous = new Map();
 
-dist.set(toKey(...q[0]), 0);
+dist.set(q[0], 0);
 
 while (q.length > 0) {
-  const u = q.pop();
-  for (const neigh of getNeigh(...u)) {
-    const alt = dist.get(toKey(...u)) + neigh[3];
-    const bestDist = dist.get(toKey(neigh[0], neigh[1], neigh[2])) ?? Infinity;
+  const u = q.shift();
+  if (seen.has(u)) continue;
+  seen.add(u);
+  for (const neigh of getNeigh(...fromKey(u))) {
+    const neighKey = toKey(...neigh);
+    const alt = dist.get(u) + neigh[3];
+    const bestDist = dist.get(neighKey) ?? Infinity;
     if (alt < bestDist) {
-      dist.set(toKey(neigh[0], neigh[1], neigh[2]), alt);
-      previous.set(toKey(neigh[0], neigh[1], neigh[2]), [u]);
-      q.push([neigh[0], neigh[1], neigh[2]]);
+      dist.set(neighKey, alt);
+      previous.set(neighKey, [u]);
+      q.push(neighKey);
     } else if (alt == bestDist) {
-      previous.get(toKey(neigh[0], neigh[1], neigh[2])).push(u);
+      previous.get(toKey(...neigh)).push(u);
     }
   }
+  q.sort((a, b) => (dist.get(a) ?? Infinity) - (dist.get(b) ?? Infinity));
 }
 
 function toKey(x, y, dir) {
@@ -66,12 +71,10 @@ const q2 = endNodes.filter((e) => dist.get(e) == part1);
 const unique = new Set();
 while (q2.length > 0) {
   const u = q2.pop();
-  const [x, y] = fromKey(u);
-  maze[y][x] = "O";
   unique.add(u >> 2);
   const prevNodes = previous.get(u) ?? [];
   for (const prev of prevNodes) {
-    q2.push(toKey(...prev));
+    q2.push(prev);
   }
 }
 
