@@ -12,47 +12,53 @@ const falling = 1024;
 
 const grid = new Array(size).fill(0).map(() => new Array(size).fill(0));
 
+let path;
 for (let i = 0; true; ++i) {
   const [x, y] = bytes[i];
   grid[y][x] = 1;
   if (i < falling - 1) {
     continue;
   }
-  const dist = dijkstra();
+  if (path && !path.includes(toKey(x, y))) continue;
+  path = bfs();
   if (i == falling - 1) {
-    console.log(dist);
+    console.log(path.length - 1);
   }
-  if (dist == undefined) {
-    console.log(`${x}, ${y}`);
+  if (path.length == 1) {
+    console.log(`${x},${y}`);
     break;
   }
 }
 
-function dijkstra() {
+function bfs() {
   const q = [toKey(0, 0)];
   const seen = new Set();
-  const dist = new Map();
   const previous = new Map();
 
-  dist.set(q[0], 0);
+  seen.add(q[0]);
 
   while (q.length > 0) {
     const u = q.shift();
-    if (seen.has(u)) continue;
-    seen.add(u);
     for (const neigh of getNeigh(...fromKey(u))) {
       const neighKey = toKey(...neigh);
-      const alt = dist.get(u) + 1;
-      const bestDist = dist.get(neighKey) ?? Infinity;
-      if (alt < bestDist) {
-        dist.set(neighKey, alt);
-        previous.set(neighKey, [u]);
-        q.push(neighKey);
-      }
+      if (seen.has(neighKey)) continue;
+      seen.add(neighKey);
+      previous.set(neighKey, u);
+      q.push(neighKey);
     }
-    q.sort((a, b) => (dist.get(a) ?? Infinity) - (dist.get(b) ?? Infinity));
   }
-  return dist.get(toKey(size - 1, size - 1));
+  const path = buildPath(previous, toKey(size - 1, size - 1));
+  return path;
+}
+
+function buildPath(prev, key) {
+  let k = key;
+  let p = [key];
+  while (prev.has(k)) {
+    k = prev.get(k);
+    p.push(k);
+  }
+  return p;
 }
 
 function toKey(x, y) {
